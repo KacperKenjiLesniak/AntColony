@@ -12,7 +12,7 @@ start_link(WorldParameters) ->
 init(State) ->
     simulation_event_stream:component_ready(?MODULE),
 
-    {ok, {{one_for_one, State#world_parameters.ants, 1}, []}}.
+    {ok, {{one_for_one, 5, 1}, []}}.
 
 breed(WorldParameters) ->
     CurriedBreed = fun(Colony) -> breedAnts(WorldParameters, Colony) end,
