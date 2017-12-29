@@ -8,8 +8,8 @@
 read_world_parameters_from_settings() ->
     Food = application:get_env(ant_colony_simulation, food, 3),
 
-    Ants = application:get_env(ant_colony_simulation, ants, [5,8,10]),
-    Colonies = application:get_env(ant_colony_simulation, colonies, 3),
+    Ants = application:get_env(ant_colony_simulation, ants, 4),
+    Colonies = application:get_env(ant_colony_simulation, colonies, 1),
 
     Width = application:get_env(ant_colony_simulation, width, 70),
     Height = application:get_env(ant_colony_simulation, height, 70),

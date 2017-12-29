@@ -1,7 +1,9 @@
+-define(FOOD_QUANTITY, 5).
+
 -record(target, {x, y}).
 -record(position, {x, y}).
 
--record(food, {pid, world, position}).
+-record(food, {pid, world, position, quantity}).
 
 -record(ant, {pid, position, colony_position, world, target = #target{},
                     food_around = false}).
