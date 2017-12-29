@@ -14,19 +14,23 @@ init(State) ->
 
     {ok, {{one_for_one, State#world_parameters.ants, 1}, []}}.
 
-breed(Parameters) ->
-    breedAnts(0, Parameters#world_parameters.ants, Parameters).
+breed(WorldParameters) ->
+    CurriedBreed = fun(Colony) -> breedAnts(WorldParameters, Colony) end,
+    lists:foreach(CurriedBreed, WorldParameters#world_parameters.colonies).
 
-breedAnts(Created, Total, WorldParameters) when Created < Total ->
-    Ant = { {ant, Created + 1},
-               {simulation_entity_ant, start_link, [ {WorldParameters, random} ]},
+breedAnts(WorldParameters, Colony) ->
+    breedAnts(Colony#colony.ants_number, Colony#colony.position, WorldParameters).
+
+breedAnts(AntsLeft, ColonyPosition, WorldParameters) when AntsLeft > 0 ->
+    Ant = { {ant, ColonyPosition, AntsLeft},
+               {simulation_entity_ant, start_link, [ {WorldParameters, ColonyPosition} ]},
                temporary, brutal_kill, worker,
                [ simulation_entity_ant ]},
 
     supervisor:start_child(?MODULE, Ant),
-    breedAnts(Created + 1, Total, WorldParameters);
+    breedAnts(AntsLeft - 1, ColonyPosition, WorldParameters);
 
-breedAnts(_Created, _Total, _WorldParameters) ->
+breedAnts(_AntsLeft, _ColonyPosition, _WorldParameters) ->
     done.
 
 kill_children() ->

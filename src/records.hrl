@@ -1,4 +1,5 @@
 -define(FOOD_QUANTITY, 5).
+-define(TIMEOUT, 1000).
 
 -record(target, {x, y}).
 -record(position, {x, y}).
@@ -9,3 +10,5 @@
                     food_around = false}).
 
 -record(world_parameters, {food, ants, colonies, width, height}).
+
+-record(colony, {position, ants_number}).

@@ -15,7 +15,7 @@ init(WorldParameters) ->
     Width = WorldParameters#world_parameters.width,
     Height = WorldParameters#world_parameters.height,
 
-    {X, Y} =  {random:uniform(Width - 1), random:uniform(Height - 1)},
+    {X, Y} =  {rand:uniform(Width - 1), rand:uniform(Height - 1)},
     State = #food{pid = self(),
                     world = WorldParameters,
                     position = #position{x = X, y = Y},
