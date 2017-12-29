@@ -2,18 +2,13 @@
 
 -include("records.hrl").
 
--export([stop_children/1, randomize/0, next_position/2, valid_position/2]).
+-export([stop_children/1, next_position/2, valid_position/2]).
 
 stop_children(SupervisorName) ->
     [ Pid ! stop_entity || {_, Pid, _, _} <- supervisor:which_children(SupervisorName) ].
 
-randomize() ->
-    << A:32, B:32, C:32 >> = crypto:strong_rand_bytes(12),
-    rand:seed({A,B,C}).
-
 next_position(World, Position) ->
     {X, Y} = {Position#position.x, Position#position.y},
-    randomize(),
     Direction = rand:uniform(8),
     case Direction of
         1  -> NewPosition = #position{x=X, y=Y+1};

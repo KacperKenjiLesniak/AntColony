@@ -19,7 +19,7 @@ init({WorldParameters, Position}) ->
     {ok, running, State, ?TIMEOUT}.
 
 terminate(_, _StateName, State) ->
-    simulation_event_stream:notify(rabbit, died, State),
+    simulation_event_stream:notify(ant, died, State),
     ok.
 
 handle_sync_event(introspection, _From, StateName, State) ->
@@ -149,7 +149,8 @@ running(timeout, State) ->
             State#ant{position = NewPosition}
     end,
 
-    simulation_event_stream:notify(ant, move, NewState).
+    simulation_event_stream:notify(ant, move, NewState),
+    {next_state, running, NewState, ?TIMEOUT}.
     % Carrot = get_first_carrot_at(NewPosition),
     %
     % case length(Carrot) of
