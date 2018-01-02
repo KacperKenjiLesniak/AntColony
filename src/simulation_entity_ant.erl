@@ -130,21 +130,23 @@ running(timeout, State) ->
             TargetReached = false,
             simulation_common:next_position(State#ant.world, State#ant.position)
 
-        % {target, X, Y} when X == (State#rabbit.position)#position.x,
-        %                     Y == (State#rabbit.position)#position.y ->
-        %     TargetReached = true,
-        %     simulation_common:next_position(State#rabbit.world, State#rabbit.position, State#rabbit.direction, false);
-        %
-        % {target, _X, _Y} ->
-        %     TargetReached = false,
-        %     simulation_common:next_position_and_target(State#rabbit.position, State#rabbit.target)
+        {target, X, Y} when X == (State#ant.position)#position.x,
+                            Y == (State#ant.position)#position.y ->
+            TargetReached = true,
+            State#ant.position
+            % simulation_common:next_position(State#rabbit.world, State#rabbit.position, State#rabbit.direction, false);
+
+        {target, _X, _Y} ->
+            TargetReached = false,
+            simulation_common:next_position_and_target(State#rabbit.position, State#rabbit.target)
     end,
 
     NewState = case TargetReached of
         true  ->
+            Target = what_is_at(NewPosition),
+            affect_target(Target),
             State#ant{position = NewPosition,
-                         target = #target{x = undefined, y = undefined}};
-
+                      target = get_new_target(State, Target)};
         false ->
             State#ant{position = NewPosition}
     end,
@@ -171,6 +173,18 @@ running(timeout, State) ->
     %     1 ->
     %         {stop, normal, NewState}
     % end.
+
+get_new_target(_State, {colony, ColonyPosition}) ->
+  #target{x = undefined, y = undefined}.
+
+get_new_target(State, {food, Food}) ->
+  #target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}.
+
+% get_new_target(State, {pheromone, Pheromone}) ->
+
+affect_target({food, Food}) ->
+  gen_server:call(Food, {eat}).
+
 %
 % eating({carrot_around, _CarrotPosition}, State) ->
 %     {next_state, eating, State, ?TIMEOUT};
@@ -290,3 +304,28 @@ running(timeout, State) ->
 %
 % get_first_carrot_at(_Position, Carrot) ->
 %     [ Carrot ].
+
+what_is_at(Position, ColonyPosition) when Position#position.x = ColonyPosition#position.x,
+                                          Position#position.y = ColonyPosition#position.y ->
+  {colony, ColonyPosition}.
+
+what_is_at(Position, _ColonyPosition) ->
+  AllFood = supervisor:which_children(simulation_food_supervisor),
+  AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
+  what_is_at(Position, AllFood, AllPheromone).
+
+% what_is_at(Position, [], [ {_Id, Pheromone, _Type, _Modules} | Rest ]) ->
+
+what_is_at(Position, [{_Id, Food, _Type, _Modules} | Rest ], []) ->
+  try gen_server:call(Food, {are_you_at, Position}) of
+    true ->
+        food_at(Position, Food);
+    false ->
+        what_is_at(Position, Rest)
+  catch
+    exit: _Reason -> what_is_at(Position, Rest)
+  end;
+
+food_at(_Position, Food) -> {food, Food}.
+
+% pheromone_at(_Position, Pheromone) -> {pheromone, Pheromone}.
