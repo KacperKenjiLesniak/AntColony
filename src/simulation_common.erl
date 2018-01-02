@@ -2,7 +2,7 @@
 
 -include("records.hrl").
 
--export([stop_children/1, next_position/2, valid_position/2]).
+-export([stop_children/1, next_position/2, valid_position/2, next_position_to_target/3]).
 
 stop_children(SupervisorName) ->
     [ Pid ! stop_entity || {_, Pid, _, _} <- supervisor:which_children(SupervisorName) ].
@@ -36,4 +36,21 @@ valid_position(World, Position) ->
             true;
         true ->
             false
+    end.
+
+next_position_to_target(World, Position, {target, undefined, undefined}) ->
+    next_position(World, Position);
+
+next_position_to_target(_World, Position, Target) ->
+    {X, Y} = {Target#target.x - Position#position.x, Target#target.y - Position#position.y},
+    if
+        X >  0, Y >  0 -> #position{x=Position#position.x+1, y=Position#position.y+1};
+        X >  0, Y <  0 -> #position{x=Position#position.x+1, y=Position#position.y-1};
+        X >  0, Y == 0 -> #position{x=Position#position.x+1, y=Position#position.y};
+        X <  0, Y == 0 -> #position{x=Position#position.x-1, y=Position#position.y};
+        X == 0, Y >  0 -> #position{x=Position#position.x, y=Position#position.y+1};
+        X == 0, Y <  0 -> #position{x=Position#position.x, y=Position#position.y-1};
+        X <  0, Y >  0 -> #position{x=Position#position.x-1, y=Position#position.y+1};
+        X <  0, Y <  0 -> #position{x=Position#position.x-1, y=Position#position.y-1};
+        X == 0, Y == 0 -> #position{x=Position#position.x, y=Position#position.y}
     end.

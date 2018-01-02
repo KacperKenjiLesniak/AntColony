@@ -125,29 +125,34 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %     end;
 
 running(timeout, State) ->
-    NewPosition = case State#ant.target of
-        {target, undefined, undefined} ->
-            TargetReached = false,
-            simulation_common:next_position(State#ant.world, State#ant.position)
 
+    AskForTarget = case State#ant.target of
+        {target, undefined, undefined} ->
+            true;
         {target, X, Y} when X == (State#ant.position)#position.x,
                             Y == (State#ant.position)#position.y ->
-            TargetReached = true,
-            State#ant.position
-            % simulation_common:next_position(State#rabbit.world, State#rabbit.position, State#rabbit.direction, false);
-
+            true;
         {target, _X, _Y} ->
-            TargetReached = false,
-            simulation_common:next_position_and_target(State#rabbit.position, State#rabbit.target)
+            false
     end,
 
-    NewState = case TargetReached of
+    NewPosition = simulation_common:next_position_to_target(State#ant.world, State#ant.position, State#ant.target),
+
+    NewState = case AskForTarget of
         true  ->
-            Target = what_is_at(NewPosition),
-            affect_target(Target),
-            State#ant{position = NewPosition,
-                      target = get_new_target(State, Target)};
+
+            EntityMet = what_is_at(NewPosition, State#ant.colony_position),
+
+
+            affect_target(EntityMet),
+
+
+            NewTarget = get_new_target(State, EntityMet),
+
+
+            State#ant{position = NewPosition, target = NewTarget};
         false ->
+
             State#ant{position = NewPosition}
     end,
 
@@ -173,17 +178,22 @@ running(timeout, State) ->
     %     1 ->
     %         {stop, normal, NewState}
     % end.
+get_new_target(State, {nothing}) ->
+    State#ant.target;
 
-get_new_target(_State, {colony, ColonyPosition}) ->
-  #target{x = undefined, y = undefined}.
+get_new_target(_State, {colony, _ColonyPosition}) ->
+  #target{x = undefined, y = undefined};
 
-get_new_target(State, {food, Food}) ->
+get_new_target(State, {food, _Food}) ->
   #target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}.
 
 % get_new_target(State, {pheromone, Pheromone}) ->
 
 affect_target({food, Food}) ->
-  gen_server:call(Food, {eat}).
+  gen_server:call(Food, {eat});
+
+affect_target(_) ->
+  ok.
 
 %
 % eating({carrot_around, _CarrotPosition}, State) ->
@@ -305,26 +315,34 @@ affect_target({food, Food}) ->
 % get_first_carrot_at(_Position, Carrot) ->
 %     [ Carrot ].
 
-what_is_at(Position, ColonyPosition) when Position#position.x = ColonyPosition#position.x,
-                                          Position#position.y = ColonyPosition#position.y ->
-  {colony, ColonyPosition}.
+what_is_at(Position, ColonyPosition) when Position#position.x == ColonyPosition#position.x,
+                                          Position#position.y == ColonyPosition#position.y ->
+  {colony, ColonyPosition};
 
 what_is_at(Position, _ColonyPosition) ->
+
   AllFood = supervisor:which_children(simulation_food_supervisor),
-  AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
+  %AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
+  AllPheromone = [],
   what_is_at(Position, AllFood, AllPheromone).
 
 % what_is_at(Position, [], [ {_Id, Pheromone, _Type, _Modules} | Rest ]) ->
 
 what_is_at(Position, [{_Id, Food, _Type, _Modules} | Rest ], []) ->
+
   try gen_server:call(Food, {are_you_at, Position}) of
     true ->
+
         food_at(Position, Food);
     false ->
-        what_is_at(Position, Rest)
+        what_is_at(Position, Rest, [])
   catch
     exit: _Reason -> what_is_at(Position, Rest)
-  end;
+
+end;
+
+what_is_at(_Position, [], []) ->
+    {nothing}.
 
 food_at(_Position, Food) -> {food, Food}.
 
