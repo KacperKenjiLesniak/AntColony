@@ -28,7 +28,6 @@ init(WorldParameters) ->
 
 populate(Parameters) ->
     simulation_food_supervisor:place(Parameters),
-
     simulation_ants_supervisor:breed(Parameters),
     done.
 

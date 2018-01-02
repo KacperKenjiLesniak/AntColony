@@ -1,5 +1,5 @@
 -define(FOOD_QUANTITY, 5).
--define(TIMEOUT, 1000).
+-define(TIMEOUT, 5000).
 
 -record(target, {x, y}).
 -record(position, {x, y}).

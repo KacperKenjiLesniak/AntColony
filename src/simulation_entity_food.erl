@@ -10,7 +10,6 @@ start_link(WorldParameters) ->
     gen_server:start_link(?MODULE, WorldParameters, []).
 
 init(WorldParameters) ->
-    simulation_common:randomize(),
 
     Width = WorldParameters#world_parameters.width,
     Height = WorldParameters#world_parameters.height,
@@ -20,6 +19,7 @@ init(WorldParameters) ->
                     world = WorldParameters,
                     position = #position{x = X, y = Y},
                     quantity = ?FOOD_QUANTITY},
+
     simulation_event_stream:notify(food, placed, State),
     {ok, State}.
 
