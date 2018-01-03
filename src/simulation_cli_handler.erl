@@ -14,6 +14,7 @@ handle_event(Msg, State) ->
 
         {_, eaten, _}   -> "[--]";
         {_, died, _}    -> "[--]";
+        {_, finished, _}-> "[--]";
 
         _               -> "[ii]"
     end,

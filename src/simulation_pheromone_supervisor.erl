@@ -1,31 +1,27 @@
- -module(simulation_pheromone_supervisor).
-% -behavior(supervisor).
-%
-% -include("records.hrl").
-%
-% -export([ start_link/1, init/1 ]).
-% -export([ place/1, kill_children/0 ]).
-%
-% start_link(WorldParameters) ->
-%     supervisor:start_link({local, ?MODULE}, ?MODULE, WorldParameters).
-%
-% init(State) ->
-%     simulation_event_stream:component_ready(?MODULE),
-%     {ok, {{one_for_one, State#world_parameters.food, 1}, []}}.
-%
-% placePheromone(Position, FoodPosition) ->
-%     Pheromone = {{pheromone, }}.
-%
-% placeFood(Created, Total, WorldParameters) when Created < Total ->
-%     Food = { {food, Created + 1},
-%                {simulation_entity_food, start_link, [ WorldParameters ]},
-%                temporary, brutal_kill, worker,
-%                [ simulation_entity_food ]},
-%
-%     supervisor:start_child(?MODULE, Food);
-%
-% placeFood(_Created, _Total, _WorldParameters) ->
-%     done.
-%
-% kill_children() ->
-%     simulation_common:stop_children(?MODULE).
+-module(simulation_pheromone_supervisor).
+-behavior(supervisor).
+
+-include("records.hrl").
+
+-export([ start_link/1, init/1 ]).
+-export([ place/1, kill_children/0 ]).
+
+start_link(WorldParameters) ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, WorldParameters).
+
+init(State) ->
+    simulation_event_stream:component_ready(?MODULE),
+    {ok, {{one_for_one, 3, 60}, []}}.
+
+placePheromone(WorldParameters, Position, FoodPosition) ->
+    Pheromone = { {pheromone, FoodPosition},
+                  simulation_entity_pheromone, start_link, [{WorldParameters, Position, FoodPosition}]
+                  temporary, brutal_kill, worker,
+                  [simulation_entity_pheromone]}.
+    supervisor:start_child(?MODULE, Pheromone);
+
+placePheromone(_WorldParameters, _Position, _FoodPosition) ->
+    done.
+
+kill_children() ->
+    simulation_common:stop_children(?MODULE).
