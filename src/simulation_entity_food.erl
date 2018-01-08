@@ -33,7 +33,7 @@ handle_call({are_you_at, Position}, _From, State) ->
 
 handle_call({eat}, _From, State) ->
     case State#food.quantity of
-        0 ->
+        1 ->
             {stop, normal, {error, food_patch_eaten}, State};
         _ ->
             NewQuantity = State#food.quantity - 1,

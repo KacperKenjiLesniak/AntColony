@@ -143,49 +143,40 @@ running(timeout, State) ->
 
             EntityMet = what_is_at(NewPosition, State#ant.colony_position),
 
+            PheromoneNear = pheromone_near(NewPosition),
 
             affect_target(EntityMet),
 
+            {NewTarget, FoodPosition} = get_new_target(State, EntityMet, NewPosition, PheromoneNear),
 
-            NewTarget = get_new_target(State, EntityMet),
-
-
-            State#ant{position = NewPosition, target = NewTarget};
+            State#ant{position = NewPosition, target = NewTarget, food_position = FoodPosition};
         false ->
 
             State#ant{position = NewPosition}
     end,
 
+    if
+        State#ant.food_position /= undefined ->
+            simulation_pheromone_supervisor:placePheromone(State#ant.world, State#ant.position, State#ant.food_position);
+        true ->
+            false
+    end,
+
+
     simulation_event_stream:notify(ant, move, NewState),
     {next_state, running, NewState, ?TIMEOUT}.
-    % Carrot = get_first_carrot_at(NewPosition),
-    %
-    % case length(Carrot) of
-    %     0 when NewState#rabbit.time_without_food < ?MAX_TIME_WITHOUT_FOOD_RABBIT ->
-    %         {next_state, running, NewState, ?TIMEOUT};
-    %
-    %     0 ->
-    %         {stop, normal, NewState};
-    %
-    %     1 when NewState#rabbit.time_without_food =< ?MAX_TIME_WITHOUT_FOOD_RABBIT ->
-    %         broadcast_found_carrot(NewPosition),
-    %         NewStateEating = NewState#rabbit{target = #target{x = undefined, y = undefined},
-    %                                          carrot_being_eaten = lists:nth(1, Carrot)},
-    %
-    %         simulation_event_stream:notify(rabbit, eating, NewStateEating),
-    %         {next_state, eating, NewStateEating, ?TIMEOUT};
-    %
-    %     1 ->
-    %         {stop, normal, NewState}
-    % end.
-get_new_target(State, {nothing}) ->
-    State#ant.target;
 
-get_new_target(_State, {colony, _ColonyPosition}) ->
-  #target{x = undefined, y = undefined};
+get_new_target(State, {nothing}, _NewPosition, {position, X, Y}) ->
+    {#target{x = X, y = Y}, undefined};
 
-get_new_target(State, {food, _Food}) ->
-  #target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}.
+get_new_target(State, {nothing}, _NewPosition, _Pheromone) ->
+    {State#ant.target, undefined};
+
+get_new_target(_State, {colony, _ColonyPosition}, _NewPosition, _Pheromone) ->
+  {#target{x = undefined, y = undefined}, undefined};
+
+get_new_target(State, {food, _Food}, NewPosition, _Pheromone) ->
+  {#target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}, NewPosition}.
 
 % get_new_target(State, {pheromone, Pheromone}) ->
 
@@ -347,3 +338,21 @@ what_is_at(_Position, [], []) ->
 food_at(_Position, Food) -> {food, Food}.
 
 % pheromone_at(_Position, Pheromone) -> {pheromone, Pheromone}.
+
+pheromone_near(Position) ->
+    AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
+    pheromone_near(Position, AllPheromone).
+
+
+pheromone_near(Position, [{_Id, Pheromone, _Type, _Modules} | Rest ]) ->
+    try gen_server:call(Pheromone, {are_you_near, Position}) of
+      {position, X, Y} ->
+          #position{x = X, y = Y};
+      false ->
+          pheromone_near(Position, Rest)
+    catch
+      exit: _Reason -> pheromone_near(Position, Rest)
+  end;
+
+ pheromone_near(_Position, []) ->
+      {nothing}.
