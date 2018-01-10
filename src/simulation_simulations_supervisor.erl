@@ -12,6 +12,11 @@ start_link(WorldParameters) ->
 init(WorldParameters) ->
     Args = [ WorldParameters ],
 
+    PheromoneSupervisor = {pheromone_supervisor,
+                         {simulation_pheromone_supervisor, start_link, Args},
+                         permanent, brutal_kill, supervisor,
+                         [ simulation_pheromone_supervisor ]},
+
     FoodSupervisor = {food_supervisor,
                          {simulation_food_supervisor, start_link, Args},
                          permanent, brutal_kill, supervisor,
@@ -22,13 +27,9 @@ init(WorldParameters) ->
                          permanent, brutal_kill, supervisor,
                          [ simulation_ants_supervisor ]},
 
-     PheromoneSupervisor = {pheromone_supervisor,
-                          {simulation_pheromone_supervisor, start_link, Args},
-                          permanent, brutal_kill, supervisor,
-                          [ simulation_pheromone_supervisor ]},
 
     {ok, {{one_for_all, 1, 60},
-          [ FoodSupervisor, AntsSupervisor, PheromoneSupervisor]}}.
+          [PheromoneSupervisor, FoodSupervisor, AntsSupervisor]}}.
 
 populate(Parameters) ->
     simulation_food_supervisor:place(Parameters),

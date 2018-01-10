@@ -32,6 +32,10 @@ handle_call({are_you_near, Position}, _From, State) ->
                  true
                   -> false
              end,
+    {reply, Result, State};
+
+handle_call({where_is_food}, _From, State) ->
+    Result = State#pheromone.food_position,
     {reply, Result, State}.
 
 terminate(_, State) ->
