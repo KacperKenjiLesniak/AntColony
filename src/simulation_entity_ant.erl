@@ -176,6 +176,9 @@ get_new_target(_State, {colony, _ColonyPosition}, _NewPosition, _Pheromone) ->
   {#target{x = undefined, y = undefined}, undefined};
 
 get_new_target(State, {food, _Food}, NewPosition, _Pheromone) ->
+  {#target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}, NewPosition};
+
+get_new_target(State, {pheromone, Pheromone}, NewPosition, _Pheromone) ->
   {#target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}, NewPosition}.
 
 % get_new_target(State, {pheromone, Pheromone}) ->
@@ -313,18 +316,16 @@ what_is_at(Position, ColonyPosition) when Position#position.x == ColonyPosition#
 what_is_at(Position, _ColonyPosition) ->
 
   AllFood = supervisor:which_children(simulation_food_supervisor),
-  %AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
-  AllPheromone = [],
+  AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
   what_is_at(Position, AllFood, AllPheromone).
 
 % what_is_at(Position, [], [ {_Id, Pheromone, _Type, _Modules} | Rest ]) ->
 
-what_is_at(Position, [{_Id, Food, _Type, _Modules} | Rest ], []) ->
+what_is_at(Position, [{_Id, Food, _Type, _Modules} | Rest ], _Pheromones) ->
 
   try gen_server:call(Food, {are_you_at, Position}) of
     true ->
-
-        food_at(Position, Food);
+        {food, Food};
     false ->
         what_is_at(Position, Rest, [])
   catch
@@ -332,10 +333,20 @@ what_is_at(Position, [{_Id, Food, _Type, _Modules} | Rest ], []) ->
 
 end;
 
+what_is_at(Position, [], [{_Id, Pheromone, _Type, _Modules} | Rest ]) ->
+
+  try gen_server:call(Pheromone, {are_you_at, Position}) of
+    true ->
+        {pheromone, Pheromone};
+    false ->
+        what_is_at(Position, [], Rest)
+  catch
+    exit: _Reason -> what_is_at(Position, Rest)
+
+end;
+
 what_is_at(_Position, [], []) ->
     {nothing}.
-
-food_at(_Position, Food) -> {food, Food}.
 
 % pheromone_at(_Position, Pheromone) -> {pheromone, Pheromone}.
 
