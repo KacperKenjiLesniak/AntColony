@@ -28,7 +28,8 @@ handle_call({are_you_at, Position}, _From, State) ->
 handle_call({are_you_near, Position}, _From, State) ->
     {X, Y} = {(State#pheromone.position)#position.x, (State#pheromone.position)#position.y},
     Result = if erlang:abs(Position#position.x - X) < 4, erlang:abs(Position#position.y - Y) < 4
-                  -> State#pheromone.position;
+                  -> simulation_event_stream:notify(pheromone, near, State#pheromone.position),
+                     State#pheromone.position;
                  true
                   -> false
              end,
