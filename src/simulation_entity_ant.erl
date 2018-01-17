@@ -51,18 +51,12 @@ running(timeout, _, State) ->
 
     NewState = case AskForTarget of
         true  ->
-
             EntityMet = what_is_at(NewPosition, State#ant.colony_position),
-
             PheromoneNear = pheromone_near(NewPosition),
-
             affect_target(EntityMet),
-
             {NewTarget, FoodPosition} = get_new_target(State, EntityMet, NewPosition, PheromoneNear),
-
             State#ant{position = NewPosition, target = NewTarget, food_position = FoodPosition};
         false ->
-
             State#ant{position = NewPosition}
     end,
 

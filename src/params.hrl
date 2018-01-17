@@ -1,0 +1,4 @@
+-define(FOOD_QUANTITY, 5).
+-define(ANT_QUANTITY, 2).
+-define(PHEROMONE_TIME, 24000).
+-define(TIMEOUT, 3000).

@@ -1,7 +1,4 @@
--define(FOOD_QUANTITY, 5).
--define(PHEROMONE_TIME, 24000).
--define(TIMEOUT, 3000).
-
+-include("params.hrl").
 -record(target, {x, y}).
 -record(position, {x, y}).
 
