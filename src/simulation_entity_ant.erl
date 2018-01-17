@@ -37,17 +37,17 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 running(timeout, _, State) ->
 
+    NewPosition = simulation_common:next_position_to_target(State#ant.world, State#ant.position, State#ant.target),
+
     AskForTarget = case State#ant.target of
         {target, undefined, undefined} ->
             true;
-        {target, X, Y} when X == (State#ant.position)#position.x,
-                            Y == (State#ant.position)#position.y ->
+        {target, X, Y} when X == NewPosition#position.x,
+                            Y == NewPosition#position.y ->
             true;
         {target, _X, _Y} ->
             false
     end,
-
-    NewPosition = simulation_common:next_position_to_target(State#ant.world, State#ant.position, State#ant.target),
 
     NewState = case AskForTarget of
         true  ->
