@@ -2,4 +2,6 @@
 Erlang simulation of ant colony.
 
 To start simulation:
-c(simulation), simulation:start(1,1), simulation_controller:start_simulation().
+rebar3 compile
+rebar3 shell
+observer:start(),application:start(ant_colony_simulation),simulation_controller:start_simulation().

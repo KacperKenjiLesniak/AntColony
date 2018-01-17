@@ -9,7 +9,7 @@
 start_link(WorldParameters) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, WorldParameters).
 
-init(State) ->
+init(_State) ->
     simulation_event_stream:component_ready(?MODULE),
 
     {ok, {{one_for_one, 5, 1}, []}}.
