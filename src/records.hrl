@@ -1,6 +1,6 @@
 -define(FOOD_QUANTITY, 10).
 -define(PHEROMONE_TIME, 24000).
--define(TIMEOUT, 3000).
+-define(TIMEOUT, 1000).
 
 -record(target, {x, y}).
 -record(position, {x, y}).

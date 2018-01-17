@@ -13,7 +13,6 @@ init({WorldParameters, Position, FoodPosition}) ->
     State = #pheromone{pid = self(), position = Position, food_position = FoodPosition,
                     world = WorldParameters},
     simulation_event_stream:notify(pheromone, placed, State),
-    %timer:apply_after(?PHEROMONE_TIME, ?MODULE, delayed_shutdown, [State]),
     erlang:send_after(?PHEROMONE_TIME, self(), timeout_shutdown),
     {ok, State}.
 

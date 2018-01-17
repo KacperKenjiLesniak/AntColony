@@ -1,13 +1,13 @@
 -module(simulation_entity_ant).
--behavior(gen_fsm).
+-behavior(gen_statem).
 
 -include("records.hrl").
 
--export([ start_link/1, init/1, handle_sync_event/4, terminate/3, handle_info/3, code_change/4 ]).
--export([ running/2]).
+-export([ start_link/1, init/1, terminate/3, callback_mode/0, handle_info/3, code_change/4 ]).
+-export([ running/3]).
 
 start_link(InitialState) ->
-    gen_fsm:start_link(?MODULE, InitialState, []).
+    gen_statem:start_link(?MODULE, InitialState, []).
 
 init({WorldParameters, Position}) ->
 
@@ -22,10 +22,8 @@ terminate(_, _StateName, State) ->
     simulation_event_stream:notify(ant, died, State),
     ok.
 
-handle_sync_event(introspection, _From, StateName, State) ->
-    {reply, {introspection, StateName, State}, StateName, State}.
-
-
+callback_mode() ->
+    state_functions.
 
 handle_info(stop_entity, _StateName, State) ->
     {stop, normal, State};
@@ -37,7 +35,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 
 
-running(timeout, State) ->
+running(timeout, _, State) ->
 
     AskForTarget = case State#ant.target of
         {target, undefined, undefined} ->
@@ -76,13 +74,13 @@ running(timeout, State) ->
     end,
 
     simulation_event_stream:notify(ant, move, NewState),
-    {next_state, running, NewState, ?TIMEOUT}.
+    {next_state, running,NewState,?TIMEOUT}.
 
 get_new_target(State, {nothing}, _NewPosition, {position, X, Y}) ->
     simulation_event_stream:notify(ant, pheromone_noticed, State),
     {#target{x = X, y = Y}, undefined};
 
-get_new_target(State, {nothing}, _NewPosition, _Pheromone) ->
+get_new_target(_State, {nothing}, _NewPosition, _Pheromone) ->
     {#target{x = undefined, y = undefined}, undefined};
 
 get_new_target(_State, {colony, _ColonyPosition}, _NewPosition, _Pheromone) ->
@@ -91,7 +89,7 @@ get_new_target(_State, {colony, _ColonyPosition}, _NewPosition, _Pheromone) ->
 get_new_target(State, {food, _Food}, NewPosition, _Pheromone) ->
     {#target{x = State#ant.colony_position#position.x, y = State#ant.colony_position#position.y}, NewPosition};
 
-get_new_target(State, {pheromone, Pheromone}, NewPosition, _Pheromone) ->
+get_new_target(State, {pheromone, Pheromone}, _NewPosition, _Pheromone) ->
   FoodPosition = where_is_food(Pheromone),
   simulation_event_stream:notify(ant, following_pheromone, State),
   {#target{x = FoodPosition#position.x, y = FoodPosition#position.y}, undefined}.
@@ -111,8 +109,6 @@ what_is_at(Position, _ColonyPosition) ->
   AllFood = supervisor:which_children(simulation_food_supervisor),
   AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
   what_is_at(Position, AllFood, AllPheromone).
-
-% what_is_at(Position, [], [ {_Id, Pheromone, _Type, _Modules} | Rest ]) ->
 
 what_is_at(Position, [{_Id, Food, _Type, _Modules} | Rest ], Pheromones) ->
 
@@ -141,7 +137,6 @@ end;
 what_is_at(_Position, [], []) ->
     {nothing}.
 
-% pheromone_at(_Position, Pheromone) -> {pheromone, Pheromone}.
 
 pheromone_near(Position) ->
     AllPheromone = supervisor:which_children(simulation_pheromone_supervisor),
